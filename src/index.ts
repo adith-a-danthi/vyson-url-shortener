@@ -2,10 +2,10 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import Sqids from "sqids";
 
-import { type Bindings, connectDb } from "./db";
+import { type Env, connectDb } from "./db";
 import { ensureUrlHasScheme } from "./utils";
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Env }>();
 app.use("/*", cors());
 
 app.get("/", (c) => {

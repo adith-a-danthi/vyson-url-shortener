@@ -1,11 +1,11 @@
 import { Client, createClient } from "@libsql/client";
 
-export type Bindings = {
+export type Env = {
   TURSO_DB_URL: string;
-  TURSO_DB_AUTH_TOKEN: string;
+  TURSO_DB_AUTH_TOKEN?: string;
 };
 
-export const connectDb = async (env: Bindings): Promise<Client> => {
+export const connectDb = async (env: Env): Promise<Client> => {
   try {
     const db = createClient({
       url: env.TURSO_DB_URL,

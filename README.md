@@ -43,3 +43,9 @@ A simple URL shortener built using **Hono** and **Turso**.
    ```sh
    bun run dev
    ```
+
+## Run Tests
+
+```sh
+bun test
+```

@@ -2,7 +2,8 @@
   "name": "vyson-url-shortener",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy --minify"
+    "deploy": "wrangler deploy --minify",
+    "test": "bun test"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
@@ -11,6 +12,9 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241218.0",
+    "@types/bun": "latest",
+    "dotenv": "^16.4.7",
+    "vitest": "^2.1.8",
     "wrangler": "^3.96.0"
   }
 }
