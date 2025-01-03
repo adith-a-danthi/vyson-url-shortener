@@ -38,7 +38,13 @@ A simple URL shortener built using **Hono** and **Turso**.
 
    Mention this URL for `TURSO_DB_URL` in the `.dev.vars` file.
 
-2. Start the development server:
+2. Run the migration script:
+
+   ```sh
+   bun run db:migrate
+   ```
+
+3. Start the development server:
 
    ```sh
    bun run dev

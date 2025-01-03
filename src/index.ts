@@ -3,6 +3,8 @@ import { cors } from "hono/cors";
 
 import { type Env, connectDb } from "./db";
 import { ensureUrlHasScheme, getSqid } from "./utils";
+import { urlsTable } from "./db/schema";
+import { eq } from "drizzle-orm";
 
 const app = new Hono<{ Bindings: Env }>();
 app.use("/*", cors());
@@ -14,7 +16,7 @@ app.get("/", (c) => {
 app.get("/urls", async (c) => {
   const db = await connectDb(c.env);
   try {
-    const { rows: urls } = await db.execute("SELECT * FROM urls;");
+    const urls = await db.select().from(urlsTable).all();
     return c.json(urls);
   } catch (error) {
     return c.json({ error: "Internal Server Error" }, 500);
@@ -26,36 +28,37 @@ app.post("/shorten", async (c) => {
   try {
     const { url } = await c.req.json();
     // First check if the URL already exists
-    const existingUrl = await db.execute({
-      sql: "SELECT * FROM urls WHERE url = ? LIMIT 1",
-      args: [url],
-    });
+    const existingUrl = await db
+      .select()
+      .from(urlsTable)
+      .where(eq(urlsTable.url, url))
+      .limit(1);
 
     // If URL exists, return the existing record
-    if (existingUrl.rows.length > 0) {
-      const record = existingUrl.rows[0];
+    if (existingUrl.length > 0) {
+      const record = existingUrl[0];
       return c.json(
         {
           id: record.id?.toString(),
           url: record.url,
-          short_code: record.short_code,
+          short_code: record.shortCode,
         },
         200
       );
     }
 
     // If URL doesn't exist, create new shortcode
-    const short_code = getSqid();
-    const res = await db.execute({
-      sql: "INSERT INTO urls (url, short_code) VALUES (?, ?)",
-      args: [url, short_code],
+    const shortCode = getSqid();
+    const res = await db.insert(urlsTable).values({
+      url,
+      shortCode,
     });
 
     return c.json(
       {
         id: res.lastInsertRowid?.toString(),
         url,
-        short_code,
+        short_code: shortCode,
       },
       201
     );
@@ -69,16 +72,17 @@ app.get("/redirect", async (c) => {
   const db = await connectDb(c.env);
   try {
     const { code } = c.req.query();
-    const { rows: urls } = await db.execute({
-      sql: `SELECT * FROM urls WHERE short_code = ?`,
-      args: [code],
-    });
+    const urls = await db
+      .select()
+      .from(urlsTable)
+      .where(eq(urlsTable.shortCode, code))
+      .limit(1);
 
     if (urls.length === 0) {
       return c.json({ error: "URL not found" }, 404);
     }
 
-    return c.redirect(ensureUrlHasScheme(urls[0].url as string), 302);
+    return c.redirect(ensureUrlHasScheme(urls[0].url), 302);
   } catch (error) {
     console.log(error);
     return c.json({ error: "Internal Server Error" }, 500);
