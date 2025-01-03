@@ -13,7 +13,7 @@ const mockEnv: Env = {
 
 describe("URL Shortener API", () => {
   it("should shorten a URL and redirect correctly", async () => {
-    const testUrl = "https://example.com";
+    const testUrl = `https://example.com?query=${Date.now()}`;
 
     // Test the /shorten endpoint
     const shortenResponse = await app.request(
@@ -41,5 +41,45 @@ describe("URL Shortener API", () => {
 
     expect(redirectResponse.status).toBe(302);
     expect(redirectResponse.headers.get("Location")).toBe(testUrl);
+  });
+
+
+  it("ensure duplicate URLs are not created", async () => { 
+    const testUrl = `https://example.com?timestamp=${Date.now()}`;
+
+    // Test the /shorten endpoint
+    const shortenResponse = await app.request(
+      "/shorten",
+      {
+        method: "POST",
+        body: JSON.stringify({ url: testUrl }),
+        headers: { "Content-Type": "application/json" },
+      },
+      mockEnv
+    );
+
+    expect(shortenResponse.status).toBe(201);
+    const shortenData = (await shortenResponse.json()) as any;
+    const shortCode = shortenData.short_code;
+
+    expect(shortCode).toBeDefined();
+
+    // Test the /shorten endpoint again
+    const shortenResponse2 = await app.request(
+      "/shorten",
+      {
+        method: "POST",
+        body: JSON.stringify({ url: testUrl }),
+        headers: { "Content-Type": "application/json" },
+      },
+      mockEnv
+    );
+
+    expect(shortenResponse2.status).toBe(200);
+    const shortenData2 = (await shortenResponse2.json()) as any;
+    const shortCode2 = shortenData2.short_code;
+
+    expect(shortCode2).toBeDefined();
+    expect(shortCode2).toBe(shortCode);
   });
 });

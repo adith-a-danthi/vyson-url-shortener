@@ -1,9 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import Sqids from "sqids";
 
 import { type Env, connectDb } from "./db";
-import { ensureUrlHasScheme } from "./utils";
+import { ensureUrlHasScheme, getSqid } from "./utils";
 
 const app = new Hono<{ Bindings: Env }>();
 app.use("/*", cors());
@@ -26,10 +25,27 @@ app.post("/shorten", async (c) => {
   const db = await connectDb(c.env);
   try {
     const { url } = await c.req.json();
+    // First check if the URL already exists
+    const existingUrl = await db.execute({
+      sql: "SELECT * FROM urls WHERE url = ? LIMIT 1",
+      args: [url],
+    });
 
-    const sqids = new Sqids();
-    const short_code = sqids.encode([Date.now()]);
+    // If URL exists, return the existing record
+    if (existingUrl.rows.length > 0) {
+      const record = existingUrl.rows[0];
+      return c.json(
+        {
+          id: record.id?.toString(),
+          url: record.url,
+          short_code: record.short_code,
+        },
+        200
+      );
+    }
 
+    // If URL doesn't exist, create new shortcode
+    const short_code = getSqid();
     const res = await db.execute({
       sql: "INSERT INTO urls (url, short_code) VALUES (?, ?)",
       args: [url, short_code],
@@ -44,6 +60,7 @@ app.post("/shorten", async (c) => {
       201
     );
   } catch (error: any) {
+    console.log(error);
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });
@@ -63,6 +80,7 @@ app.get("/redirect", async (c) => {
 
     return c.redirect(ensureUrlHasScheme(urls[0].url as string), 302);
   } catch (error) {
+    console.log(error);
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });
