@@ -43,8 +43,7 @@ describe("URL Shortener API", () => {
     expect(redirectResponse.headers.get("Location")).toBe(testUrl);
   });
 
-
-  it("ensure duplicate URLs are not created", async () => { 
+  it("ensure duplicate URLs are not created", async () => {
     const testUrl = `https://example.com?timestamp=${Date.now()}`;
 
     // Test the /shorten endpoint
@@ -81,5 +80,35 @@ describe("URL Shortener API", () => {
 
     expect(shortCode2).toBeDefined();
     expect(shortCode2).toBe(shortCode);
+  });
+
+  it("ensure deleting a shortcode works", async () => {
+    const testUrl = `https://example.com?delete=${Date.now()}`;
+
+    // Test the /shorten endpoint
+    const shortenResponse = await app.request(
+      "/shorten",
+      {
+        method: "POST",
+        body: JSON.stringify({ url: testUrl }),
+        headers: { "Content-Type": "application/json" },
+      },
+      mockEnv
+    );
+
+    expect(shortenResponse.status).toBe(201);
+    const shortenData = (await shortenResponse.json()) as any;
+    const shortCode = shortenData.short_code;
+
+    expect(shortCode).toBeDefined();
+
+    // Test the /shortcode/:code endpoint
+    const deleteResponse = await app.request(
+      `/shortcode/${shortCode}`,
+      { method: "DELETE" },
+      mockEnv
+    );
+
+    expect(deleteResponse.status).toBe(200);
   });
 });

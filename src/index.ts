@@ -89,4 +89,21 @@ app.get("/redirect", async (c) => {
   }
 });
 
+app.delete("/shortcode/:code", async (c) => {
+  const db = await connectDb(c.env);
+  try {
+    const { code } = c.req.param();
+
+    const res = await db.delete(urlsTable).where(eq(urlsTable.shortCode, code));
+
+    if (res.rowsAffected === 0) {
+      return c.json({ error: "URL not found" }, 404);
+    }
+    return c.json({ message: "URL deleted successfully" }, 200);
+  } catch (error) {
+    console.log(error);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
 export default app;
