@@ -1,10 +1,16 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-
-import { type Env, connectDb } from "./db";
-import { ensureUrlHasScheme, getSqid } from "./utils";
-import { urlsTable } from "./db/schema";
 import { eq } from "drizzle-orm";
+
+import { urlsTable } from "@db/schema";
+import { type Env, connectDb } from "@db/index";
+import { ensureUrlHasScheme, getSqid } from "./utils";
+import {
+  createUrlSchema,
+  deleteUrlSchema,
+  redirectUrlSchema,
+} from "@validations/urls";
+import { zv } from "@middleware/zod-validator";
 
 const app = new Hono<{ Bindings: Env }>();
 app.use("/*", cors());
@@ -23,7 +29,7 @@ app.get("/urls", async (c) => {
   }
 });
 
-app.post("/shorten", async (c) => {
+app.post("/shorten", zv("json", createUrlSchema), async (c) => {
   const db = await connectDb(c.env);
   try {
     const { url } = await c.req.json();
@@ -68,7 +74,7 @@ app.post("/shorten", async (c) => {
   }
 });
 
-app.get("/redirect", async (c) => {
+app.get("/redirect", zv("query", redirectUrlSchema), async (c) => {
   const db = await connectDb(c.env);
   try {
     const { code } = c.req.query();
@@ -89,7 +95,7 @@ app.get("/redirect", async (c) => {
   }
 });
 
-app.delete("/shortcode/:code", async (c) => {
+app.delete("/shortcode/:code", zv("param", deleteUrlSchema), async (c) => {
   const db = await connectDb(c.env);
   try {
     const { code } = c.req.param();
