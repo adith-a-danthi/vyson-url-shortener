@@ -111,4 +111,24 @@ describe("URL Shortener API", () => {
 
     expect(deleteResponse.status).toBe(200);
   });
+
+  it("ensure empty URLs are not added", async () => {
+    const testUrl = "";
+    const shortenResponse = await app.request(
+      "/shorten",
+      {
+        method: "POST",
+        body: JSON.stringify({ url: testUrl }),
+        headers: { "Content-Type": "application/json" },
+      },
+      mockEnv
+    );
+
+    expect(shortenResponse.status).toBe(400);
+    const json = (await shortenResponse.json()) as any;
+    expect(json.success).toBe(false);
+    expect(json.errors).toBeDefined();
+    expect(json.errors.url).toBeDefined();
+    expect(json.errors.url._errors).toBeDefined();
+  });
 });
