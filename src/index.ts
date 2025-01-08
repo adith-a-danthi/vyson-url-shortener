@@ -88,7 +88,18 @@ app.get("/redirect", zv("query", redirectUrlSchema), async (c) => {
       return c.json({ error: "URL not found" }, 404);
     }
 
-    return c.redirect(ensureUrlHasScheme(urls[0].url), 302);
+    const urlObj = urls[0];
+
+    const res = await db
+      .update(urlsTable)
+      .set({ clicks: urlObj.clicks + 1, lastAccessedAt: new Date() })
+      .where(eq(urlsTable.id, urlObj.id));
+
+    if (res.rowsAffected === 0) {
+      return c.json({ error: "Internal Server Error" }, 500);
+    }
+
+    return c.redirect(ensureUrlHasScheme(urlObj.url), 302);
   } catch (error) {
     console.log(error);
     return c.json({ error: "Internal Server Error" }, 500);
