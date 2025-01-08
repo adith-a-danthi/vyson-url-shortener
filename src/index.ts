@@ -32,7 +32,7 @@ app.get("/urls", async (c) => {
 app.post("/shorten", zv("json", createUrlSchema), async (c) => {
   const db = await connectDb(c.env);
   try {
-    const { url } = c.req.valid('json');
+    const { url } = c.req.valid("json");
 
     const shortCode = getSqid();
     const res = await db.insert(urlsTable).values({
@@ -46,9 +46,9 @@ app.post("/shorten", zv("json", createUrlSchema), async (c) => {
         url,
         short_code: shortCode,
       },
-      201
+      201,
     );
-  } catch (error: any) {
+  } catch (error) {
     console.log(error);
     return c.json({ error: "Internal Server Error" }, 500);
   }

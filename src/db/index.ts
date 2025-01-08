@@ -1,5 +1,5 @@
 import { createClient } from "@libsql/client";
-import { drizzle, LibSQLDatabase } from "drizzle-orm/libsql";
+import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 
 export type Env = {
   TURSO_DB_URL: string;

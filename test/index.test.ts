@@ -2,11 +2,12 @@ import { describe, it, expect } from "vitest";
 import { config } from "dotenv";
 
 import app from "../src/index";
-import { type Env } from "../src/db";
+import type { Env } from "../src/db";
 
 config({ path: ".dev.vars" });
 
 const mockEnv: Env = {
+  // biome-ignore lint/style/noNonNullAssertion:
   TURSO_DB_URL: process.env.TURSO_DB_URL!,
   TURSO_DB_AUTH_TOKEN: process.env.TURSO_DB_AUTH_TOKEN,
 };
@@ -23,7 +24,7 @@ describe("URL Shortener API", () => {
         body: JSON.stringify({ url: testUrl }),
         headers: { "Content-Type": "application/json" },
       },
-      mockEnv
+      mockEnv,
     );
 
     expect(shortenResponse.status).toBe(201);
@@ -36,7 +37,7 @@ describe("URL Shortener API", () => {
     const redirectResponse = await app.request(
       `/redirect?code=${shortCode}`,
       { method: "GET" },
-      mockEnv
+      mockEnv,
     );
 
     expect(redirectResponse.status).toBe(302);
@@ -54,7 +55,7 @@ describe("URL Shortener API", () => {
         body: JSON.stringify({ url: testUrl }),
         headers: { "Content-Type": "application/json" },
       },
-      mockEnv
+      mockEnv,
     );
 
     expect(shortenResponse.status).toBe(201);
@@ -67,7 +68,7 @@ describe("URL Shortener API", () => {
     const deleteResponse = await app.request(
       `/shortcode/${shortCode}`,
       { method: "DELETE" },
-      mockEnv
+      mockEnv,
     );
 
     expect(deleteResponse.status).toBe(200);
@@ -82,7 +83,7 @@ describe("URL Shortener API", () => {
         body: JSON.stringify({ url: testUrl }),
         headers: { "Content-Type": "application/json" },
       },
-      mockEnv
+      mockEnv,
     );
 
     expect(shortenResponse.status).toBe(400);
