@@ -32,28 +32,8 @@ app.get("/urls", async (c) => {
 app.post("/shorten", zv("json", createUrlSchema), async (c) => {
   const db = await connectDb(c.env);
   try {
-    const { url } = await c.req.json();
-    // First check if the URL already exists
-    const existingUrl = await db
-      .select()
-      .from(urlsTable)
-      .where(eq(urlsTable.url, url))
-      .limit(1);
+    const { url } = c.req.valid('json');
 
-    // If URL exists, return the existing record
-    if (existingUrl.length > 0) {
-      const record = existingUrl[0];
-      return c.json(
-        {
-          id: record.id?.toString(),
-          url: record.url,
-          short_code: record.shortCode,
-        },
-        200
-      );
-    }
-
-    // If URL doesn't exist, create new shortcode
     const shortCode = getSqid();
     const res = await db.insert(urlsTable).values({
       url,
