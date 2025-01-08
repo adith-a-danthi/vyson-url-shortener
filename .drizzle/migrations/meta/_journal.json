@@ -15,6 +15,13 @@
       "when": 1736342375219,
       "tag": "0001_open_tenebrous",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1736349278287,
+      "tag": "0002_quiet_anthem",
+      "breakpoints": true
     }
   ]
 }
