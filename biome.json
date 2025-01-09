@@ -23,6 +23,9 @@
       "recommended": true,
       "suspicious": {
         "noExplicitAny": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "error"
       }
     }
   },

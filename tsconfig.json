@@ -12,7 +12,8 @@
     "paths": {
       "@validations/*": ["./src/validations/*"],
       "@db/*": ["./src/db/*"],
-      "@middleware/*": ["./src/middleware/*"]
+      "@middleware/*": ["./src/middleware/*"],
+      "@routes/*": ["./src/routes/*"]
     }
   }
 }

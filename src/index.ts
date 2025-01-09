@@ -11,6 +11,7 @@ import {
   redirectUrlSchema,
 } from "@validations/urls";
 import { zv } from "@middleware/zod-validator";
+import users from "@routes/users"
 
 const app = new Hono<{ Bindings: Env }>();
 app.use("/*", cors());
@@ -25,6 +26,7 @@ app.get("/urls", async (c) => {
     const urls = await db.select().from(urlsTable).all();
     return c.json(urls);
   } catch (error) {
+    console.log(error);
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });
@@ -102,5 +104,7 @@ app.delete("/shortcode/:code", zv("param", deleteUrlSchema), async (c) => {
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });
+
+app.route("/users", users);
 
 export default app;
