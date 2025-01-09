@@ -1,0 +1,1 @@
+ALTER TABLE `urls` ADD `expires_at` integer;

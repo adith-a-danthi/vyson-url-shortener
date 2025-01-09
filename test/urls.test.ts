@@ -3,7 +3,7 @@ import { config } from "dotenv";
 
 import type { Env } from "@db/index";
 import type { SelectUrl, SelectUser } from "@db/schema";
-import type { ObjectKeysToSnakeCase } from "@/utils";
+import { getSqid, type ObjectKeysToSnakeCase } from "@/utils";
 import app from "@/index";
 
 config({ path: ".dev.vars" });
@@ -177,5 +177,65 @@ describe("url routes", () => {
     expect(json.errors).toBeDefined();
     expect(json.errors.url).toBeDefined();
     expect(json.errors.url._errors).toBeDefined();
+  });
+
+  it("ensure expired URLs are not redirected", async () => {
+    const testUrl = `https://example.com?expired=${Date.now()}`;
+
+    // shorten the URL
+    const shortenResponse = await app.request(
+      "/urls/shorten",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          url: testUrl,
+          expiresAt: "2000-01-01T00:00:00.000Z",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": user1.api_key,
+        },
+      },
+      mockEnv,
+    );
+
+    expect(shortenResponse.status).toBe(201);
+    const shortenData: UrlObj = await shortenResponse.json();
+    const shortCode = shortenData.short_code;
+
+    expect(shortCode).toBeDefined();
+
+    // test redirect
+    const redirectResponse = await app.request(
+      `/urls/redirect?code=${shortCode}`,
+      { method: "GET" },
+      mockEnv,
+    );
+    expect(redirectResponse.status).toBe(410);
+  });
+
+  it("check support for custom short codes", async () => {
+    const testUrl = `https://example.com?custom=${Date.now()}`;
+    const customShortCode = getSqid();
+
+    // shorten the URL
+    const shortenResponse = await app.request(
+      "/urls/shorten",
+      {
+        method: "POST",
+        body: JSON.stringify({ url: testUrl, shortCode: customShortCode }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": user1.api_key,
+        },
+      },
+      mockEnv,
+    );
+
+    expect(shortenResponse.status).toBe(201);
+    const shortenData: UrlObj = await shortenResponse.json();
+    const shortCode = shortenData.short_code;
+
+    expect(shortCode).toBe(customShortCode);
   });
 });

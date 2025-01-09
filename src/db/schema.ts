@@ -26,6 +26,7 @@ export const urlsTable = sqliteTable("urls", {
     .notNull()
     .default(sql`(strftime('%s', 'now'))`),
   lastAccessedAt: int("last_accessed_at", { mode: "timestamp" }),
+  expiresAt: int("expires_at", { mode: "timestamp" }),
 });
 
 export type InsertUrl = typeof urlsTable.$inferInsert;

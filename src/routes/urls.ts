@@ -33,13 +33,15 @@ app.get("/", validateApiKey, async (c) => {
 app.post("/shorten", validateApiKey, zv("json", createUrlSchema), async (c) => {
   const db = await connectDb(c.env);
   try {
-    const { url } = c.req.valid("json");
+    const { url, shortCode: customShortCode, expiresAt } = c.req.valid("json");
 
-    const shortCode = getSqid();
+    const shortCode = customShortCode ?? getSqid();
+
     const res = await db.insert(urlsTable).values({
       url,
       shortCode,
       userId: c.var.user.id,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
     });
 
     return c.json(
@@ -71,6 +73,10 @@ app.get("/redirect", zv("query", redirectUrlSchema), async (c) => {
     }
 
     const urlObj = urls[0];
+
+    if (urlObj.expiresAt && urlObj.expiresAt < new Date()) {
+      return c.json({ error: "URL expired" }, 410);
+    }
 
     const res = await db
       .update(urlsTable)
