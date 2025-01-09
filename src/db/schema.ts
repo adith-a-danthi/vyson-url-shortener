@@ -8,7 +8,7 @@ export const usersTable = sqliteTable("users", {
   apiKey: text("api_key").notNull().unique(),
   createdAt: int("created_at", { mode: "timestamp" })
     .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+    .default(sql`(strftime('%s', 'now'))`),
 });
 
 export const urlsTable = sqliteTable("urls", {
