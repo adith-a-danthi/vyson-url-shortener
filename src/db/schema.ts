@@ -11,12 +11,20 @@ export const usersTable = sqliteTable("users", {
     .default(sql`(strftime('%s', 'now'))`),
 });
 
+export type InsertUser = typeof usersTable.$inferInsert;
+export type SelectUser = typeof usersTable.$inferSelect;
+
 export const urlsTable = sqliteTable("urls", {
   id: int("id").primaryKey({ autoIncrement: true }),
   url: text("url").notNull(),
   shortCode: text("short_code", { length: 255 }).notNull().unique(),
-  createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+  userId: int("user_id")
+    .notNull()
+    .references(() => usersTable.id),
   clicks: int("clicks").notNull().default(0),
+  createdAt: int("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(strftime('%s', 'now'))`),
   lastAccessedAt: int("last_accessed_at", { mode: "timestamp" }),
 });
 

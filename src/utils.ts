@@ -15,3 +15,12 @@ export const getSqid = () => {
   const sqid = new Sqids();
   return sqid.encode([Date.now(), counter]);
 };
+
+export type CamelCaseToSnakeCase<S extends string> =
+  S extends `${infer First}${infer Rest}`
+    ? `${First extends Capitalize<First> ? `_${Lowercase<First>}` : First}${CamelCaseToSnakeCase<Rest>}`
+    : S;
+
+export type ObjectKeysToSnakeCase<T> = {
+  [K in keyof T as K extends string ? CamelCaseToSnakeCase<K> : never]: T[K];
+};
