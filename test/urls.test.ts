@@ -16,7 +16,7 @@ const mockEnv: Env = {
 
 type User = ObjectKeysToSnakeCase<Pick<SelectUser, "id" | "email" | "apiKey">>;
 type UrlObj = ObjectKeysToSnakeCase<
-  Pick<SelectUrl, "id" | "url" | "shortCode">
+  Pick<SelectUrl, "id" | "url" | "shortCode" | "expiresAt">
 >;
 
 describe("url routes", () => {
@@ -237,5 +237,32 @@ describe("url routes", () => {
     const shortCode = shortenData.short_code;
 
     expect(shortCode).toBe(customShortCode);
+  });
+
+  it("ensure batch shortening works", async () => {
+    const testUrl1 = `https://example.com?batch1=${Date.now()}`;
+    const testUrl2 = `https://example.com?batch2=${Date.now()}`;
+
+    // shorten the URLs
+    const res = await app.request(
+      "/urls/shorten/batch",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          urls: [
+            { url: testUrl1, expiresAt: "2000-01-01T00:00:00.000Z" },
+            { url: testUrl2 },
+          ],
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": user1.api_key,
+        },
+      },
+      mockEnv,
+    );
+    expect(res.status).toBe(201);
+    const { urls }: { urls: UrlObj[] } = await res.json();
+    expect(urls.length).toBe(2);
   });
 });

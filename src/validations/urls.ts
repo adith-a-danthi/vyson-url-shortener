@@ -6,6 +6,10 @@ export const createUrlSchema = z.object({
   expiresAt: z.string().datetime().optional(),
 });
 
+export const createUrlBatchSchema = z.object({
+  urls: z.array(createUrlSchema),
+});
+
 export const redirectUrlSchema = z.object({
   code: z.string().min(1),
 });

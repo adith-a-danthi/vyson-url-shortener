@@ -9,6 +9,7 @@ import {
   createUrlSchema,
   redirectUrlSchema,
   deleteUrlSchema,
+  createUrlBatchSchema,
 } from "@validations/urls";
 import { getSqid, ensureUrlHasScheme } from "@/utils";
 
@@ -37,26 +38,61 @@ app.post("/shorten", validateApiKey, zv("json", createUrlSchema), async (c) => {
 
     const shortCode = customShortCode ?? getSqid();
 
-    const res = await db.insert(urlsTable).values({
-      url,
-      shortCode,
-      userId: c.var.user.id,
-      expiresAt: expiresAt ? new Date(expiresAt) : null,
-    });
-
-    return c.json(
-      {
-        id: res.lastInsertRowid?.toString(),
+    const res = await db
+      .insert(urlsTable)
+      .values({
         url,
-        short_code: shortCode,
-      },
-      201,
-    );
+        shortCode,
+        userId: c.var.user.id,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+      })
+      .returning({
+        id: urlsTable.id,
+        url: urlsTable.url,
+        short_code: urlsTable.shortCode,
+        expires_at: urlsTable.expiresAt,
+      });
+
+    return c.json({ ...res[0] }, 201);
   } catch (error) {
     console.log(error);
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });
+
+app.post(
+  "/shorten/batch",
+  validateApiKey,
+  zv("json", createUrlBatchSchema),
+  async (c) => {
+    const db = await connectDb(c.env);
+    try {
+      const { urls } = c.req.valid("json");
+
+      const res = await db
+        .insert(urlsTable)
+        .values(
+          urls.map(({ url, shortCode, expiresAt }) => ({
+            url,
+            shortCode: shortCode ?? getSqid(),
+            userId: c.var.user.id,
+            expiresAt: expiresAt ? new Date(expiresAt) : null,
+          })),
+        )
+        .returning({
+          id: urlsTable.id,
+          url: urlsTable.url,
+          short_code: urlsTable.shortCode,
+          expires_at: urlsTable.expiresAt,
+        });
+
+      return c.json({ urls: res }, 201);
+    } catch (error) {
+      console.log(error);
+      return c.json({ error: "Internal Server Error" }, 500);
+    }
+  },
+);
 
 app.get("/redirect", zv("query", redirectUrlSchema), async (c) => {
   const db = await connectDb(c.env);
