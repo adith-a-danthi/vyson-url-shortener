@@ -38,4 +38,6 @@ export const urlsTable = sqliteTable("urls", {
 });
 
 export type InsertUrl = typeof urlsTable.$inferInsert;
-export type SelectUrl = typeof urlsTable.$inferSelect;
+export type SelectUrl = Omit<typeof urlsTable.$inferSelect, "expiresAt"> & {
+  expiresAt: string | null;
+};

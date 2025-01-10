@@ -288,4 +288,52 @@ describe("url routes", () => {
 
     expect(res.status).toBe(403);
   });
+
+  it("ensure user can update url expiry", async () => {
+    const testUrl = `https://example.com?update=${Date.now()}`;
+    const expiresAtStr = "2000-01-01T00:00:00.000Z";
+
+    // shorten the URL
+    const shortenResponse = await app.request(
+      "/urls/shorten",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          url: testUrl,
+          expiresAt: expiresAtStr,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": user1.api_key,
+        },
+      },
+      mockEnv,
+    );
+
+    expect(shortenResponse.status).toBe(201);
+    const shortenData: UrlObj = await shortenResponse.json();
+    const shortCode = shortenData.short_code;
+
+    expect(shortCode).toBeDefined();
+    expect(shortenData.expires_at).toBeDefined();
+    expect(shortenData.expires_at).toBe(expiresAtStr);
+
+    // update the URL
+    const updateResponse = await app.request(
+      `/urls/${shortenData.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ expiresAt: null }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": user1.api_key,
+        },
+      },
+      mockEnv,
+    );
+
+    expect(updateResponse.status).toBe(200);
+    const updatedData: UrlObj = await updateResponse.json();
+    expect(updatedData.expires_at).toBeNull();
+  });
 });

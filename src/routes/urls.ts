@@ -10,6 +10,8 @@ import {
   redirectUrlSchema,
   deleteUrlSchema,
   createUrlBatchSchema,
+  updateUrlSchema,
+  updateUrlParamsSchema,
 } from "@validations/urls";
 import { getSqid, ensureUrlHasScheme } from "@/utils";
 
@@ -164,6 +166,56 @@ app.delete(
       }
 
       return c.json({ message: "URL deleted successfully" }, 200);
+    } catch (error) {
+      console.log(error);
+      return c.json({ error: "Internal Server Error" }, 500);
+    }
+  },
+);
+
+app.patch(
+  "/:id",
+  validateApiKey,
+  zv("param", updateUrlParamsSchema),
+  zv("json", updateUrlSchema),
+  async (c) => {
+    const user = c.var.user;
+    const db = await connectDb(c.env);
+
+    try {
+      const { expiresAt } = c.req.valid("json");
+      const { id } = c.req.valid("param");
+
+      const urls = await db
+        .select()
+        .from(urlsTable)
+        .where(eq(urlsTable.id, id))
+        .limit(1);
+
+      if (urls.length === 0) {
+        return c.json({ error: "URL not found" }, 404);
+      }
+
+      if (urls[0].userId !== user.id) {
+        return c.json({ error: "Operation not allowed" }, 403);
+      }
+
+      const res = await db
+        .update(urlsTable)
+        .set({ expiresAt: expiresAt ? new Date(expiresAt) : null })
+        .where(eq(urlsTable.id, id))
+        .returning({
+          id: urlsTable.id,
+          url: urlsTable.url,
+          short_code: urlsTable.shortCode,
+          expires_at: urlsTable.expiresAt,
+        });
+
+      if (res.length === 0) {
+        return c.json({ error: "Internal Server Error" }, 500);
+      }
+
+      return c.json({ ...res[0] }, 200);
     } catch (error) {
       console.log(error);
       return c.json({ error: "Internal Server Error" }, 500);

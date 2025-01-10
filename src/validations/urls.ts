@@ -17,3 +17,11 @@ export const redirectUrlSchema = z.object({
 export const deleteUrlSchema = z.object({
   code: z.string().min(1),
 });
+
+export const updateUrlSchema = z.object({
+  expiresAt: z.string().datetime().nullable(),
+});
+
+export const updateUrlParamsSchema = z.object({
+  id: z.string().regex(/^\d+$/).transform(Number),
+});
