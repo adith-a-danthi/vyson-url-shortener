@@ -30,6 +30,7 @@ export const urlsTable = sqliteTable("urls", {
     .notNull()
     .references(() => usersTable.id),
   clicks: int("clicks").notNull().default(0),
+  password: text("password"),
   createdAt: int("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(strftime('%s', 'now'))`),

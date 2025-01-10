@@ -13,6 +13,8 @@
   "dependencies": {
     "@hono/zod-validator": "^0.4.2",
     "@libsql/client": "^0.14.0",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^2.4.3",
     "drizzle-orm": "^0.38.3",
     "hono": "^4.6.15",
     "sqids": "^0.3.0",

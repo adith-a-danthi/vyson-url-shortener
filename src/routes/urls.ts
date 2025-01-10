@@ -13,7 +13,12 @@ import {
   updateUrlSchema,
   updateUrlParamsSchema,
 } from "@validations/urls";
-import { getSqid, ensureUrlHasScheme } from "@/utils";
+import {
+  getSqid,
+  ensureUrlHasScheme,
+  validatePassword,
+  hashPassword,
+} from "@/utils";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -36,9 +41,15 @@ app.get("/", validateApiKey, async (c) => {
 app.post("/shorten", validateApiKey, zv("json", createUrlSchema), async (c) => {
   const db = await connectDb(c.env);
   try {
-    const { url, shortCode: customShortCode, expiresAt } = c.req.valid("json");
+    const {
+      url,
+      shortCode: customShortCode,
+      expiresAt,
+      password,
+    } = c.req.valid("json");
 
     const shortCode = customShortCode ?? getSqid();
+    const passwordHash = password ? await hashPassword(password) : null;
 
     const res = await db
       .insert(urlsTable)
@@ -47,6 +58,7 @@ app.post("/shorten", validateApiKey, zv("json", createUrlSchema), async (c) => {
         shortCode,
         userId: c.var.user.id,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
+        password: passwordHash,
       })
       .returning({
         id: urlsTable.id,
@@ -100,7 +112,7 @@ app.post(
 app.get("/redirect", zv("query", redirectUrlSchema), async (c) => {
   const db = await connectDb(c.env);
   try {
-    const { code } = c.req.query();
+    const { code, pw } = c.req.query();
     const urls = await db
       .select()
       .from(urlsTable)
@@ -112,6 +124,17 @@ app.get("/redirect", zv("query", redirectUrlSchema), async (c) => {
     }
 
     const urlObj = urls[0];
+
+    if (urlObj.password) {
+      if (!pw) {
+        return c.json({ error: "Operation not allowed" }, 403);
+      }
+
+      const isValid = await validatePassword(pw, urlObj.password);
+      if (!isValid) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+    }
 
     if (urlObj.expiresAt && urlObj.expiresAt < new Date()) {
       return c.json({ error: "URL expired" }, 410);
@@ -183,7 +206,7 @@ app.patch(
     const db = await connectDb(c.env);
 
     try {
-      const { expiresAt } = c.req.valid("json");
+      const { expiresAt, password } = c.req.valid("json");
       const { id } = c.req.valid("param");
 
       const urls = await db
@@ -202,7 +225,12 @@ app.patch(
 
       const res = await db
         .update(urlsTable)
-        .set({ expiresAt: expiresAt ? new Date(expiresAt) : null })
+        .set({
+          ...(expiresAt !== undefined
+            ? { expiresAt: expiresAt ? new Date(expiresAt) : null }
+            : {}),
+          ...(password !== undefined ? { password } : {}),
+        })
         .where(eq(urlsTable.id, id))
         .returning({
           id: urlsTable.id,

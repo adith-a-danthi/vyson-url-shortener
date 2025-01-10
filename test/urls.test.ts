@@ -266,7 +266,7 @@ describe("url routes", () => {
     expect(urls.length).toBe(2);
   });
 
-  it("ensure user can't back shorten URLs with hobby tier", async () => {
+  it("ensure user can't batch shorten URLs with hobby tier", async () => {
     const testUrl1 = `https://example.com?hobby=${Date.now()}`;
     const testUrl2 = `https://example.com?hobby=${Date.now()}`;
 
@@ -289,9 +289,10 @@ describe("url routes", () => {
     expect(res.status).toBe(403);
   });
 
-  it("ensure user can update url expiry", async () => {
+  it("ensure user can update url expiry and password", async () => {
     const testUrl = `https://example.com?update=${Date.now()}`;
     const expiresAtStr = "2000-01-01T00:00:00.000Z";
+    const password = "password";
 
     // shorten the URL
     const shortenResponse = await app.request(
@@ -301,6 +302,7 @@ describe("url routes", () => {
         body: JSON.stringify({
           url: testUrl,
           expiresAt: expiresAtStr,
+          password,
         }),
         headers: {
           "Content-Type": "application/json",
@@ -335,5 +337,84 @@ describe("url routes", () => {
     expect(updateResponse.status).toBe(200);
     const updatedData: UrlObj = await updateResponse.json();
     expect(updatedData.expires_at).toBeNull();
+
+    // try redirecting without password
+    const redirectResponse = await app.request(
+      `/urls/redirect?code=${shortenData.short_code}`,
+      { method: "GET" },
+      mockEnv,
+    );
+
+    expect(redirectResponse.status).toBe(403);
+  });
+
+  it("ensure redirection works with valid password", async () => {
+    const testUrl = `https://example.com?auth=${Date.now()}`;
+    const password = "password";
+
+    const shortenResponse = await app.request(
+      "/urls/shorten",
+      {
+        method: "POST",
+        body: JSON.stringify({ url: testUrl, password }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": user1.api_key,
+        },
+      },
+      mockEnv,
+    );
+
+    expect(shortenResponse.status).toBe(201);
+    const urlDate: UrlObj = await shortenResponse.json();
+    expect(urlDate.short_code).toBeDefined();
+
+    const redirectResponse = await app.request(
+      `/urls/redirect?code=${urlDate.short_code}&pw=${password}`,
+      { method: "GET" },
+      mockEnv,
+    );
+
+    expect(redirectResponse.status).toBe(302);
+  });
+
+  it("ensure redirection doesn't work with invalid password", async () => {
+    const testUrl = `https://example.com?invalidAuth=${Date.now()}`;
+    const password = "password";
+
+    const shortenResponse = await app.request(
+      "/urls/shorten",
+      {
+        method: "POST",
+        body: JSON.stringify({ url: testUrl, password }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": user1.api_key,
+        },
+      },
+      mockEnv,
+    );
+
+    expect(shortenResponse.status).toBe(201);
+    const urlDate: UrlObj = await shortenResponse.json();
+    expect(urlDate.short_code).toBeDefined();
+
+    // Test with incorrect password
+    const redirectResponse = await app.request(
+      `/urls/redirect?code=${urlDate.short_code}&pw=nope`,
+      { method: "GET" },
+      mockEnv,
+    );
+
+    expect(redirectResponse.status).toBe(401);
+
+    // Test with no password
+    const redirectResponse2 = await app.request(
+      `/urls/redirect?code=${urlDate.short_code}`,
+      { method: "GET" },
+      mockEnv,
+    );
+
+    expect(redirectResponse2.status).toBe(403);
   });
 });
