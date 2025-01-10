@@ -11,7 +11,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.post("/", zv("json", createUserSchema), async (c) => {
   const db = await connectDb(c.env);
   try {
-    const { email, name } = c.req.valid("json");
+    const { email, name, tier } = c.req.valid("json");
 
     const apiKey = crypto.randomUUID();
 
@@ -19,6 +19,7 @@ app.post("/", zv("json", createUserSchema), async (c) => {
       email,
       name,
       apiKey,
+      tier,
     });
 
     return c.json(
@@ -27,6 +28,7 @@ app.post("/", zv("json", createUserSchema), async (c) => {
         email,
         name,
         api_key: apiKey,
+        tier,
       },
       201,
     );
