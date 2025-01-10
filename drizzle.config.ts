@@ -12,5 +12,5 @@ export default defineConfig({
     url: process.env.TURSO_DB_URL!,
     authToken: process.env.TURSO_DB_AUTH_TOKEN,
   },
-  tablesFilter: ["urls"],
+  tablesFilter: ["urls", "users"],
 });
