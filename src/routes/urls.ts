@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { connectDb, type Env } from "@db/index";
 import { urlsTable } from "@db/schema";
 import { zv } from "@middleware/zod-validator";
-import { validateApiKey } from "@middleware/auth";
+import { requireEnterpriseTier, validateApiKey } from "@middleware/auth";
 import {
   createUrlSchema,
   redirectUrlSchema,
@@ -63,6 +63,7 @@ app.post("/shorten", validateApiKey, zv("json", createUrlSchema), async (c) => {
 app.post(
   "/shorten/batch",
   validateApiKey,
+  requireEnterpriseTier,
   zv("json", createUrlBatchSchema),
   async (c) => {
     const db = await connectDb(c.env);

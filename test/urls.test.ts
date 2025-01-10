@@ -2,7 +2,7 @@ import { describe, beforeAll, expect, it } from "vitest";
 import { config } from "dotenv";
 
 import type { Env } from "@db/index";
-import type { SelectUrl, SelectUser } from "@db/schema";
+import { UserTier, type SelectUrl, type SelectUser } from "@db/schema";
 import { getSqid, type ObjectKeysToSnakeCase } from "@/utils";
 import app from "@/index";
 
@@ -31,7 +31,7 @@ describe("url routes", () => {
       "/users",
       {
         method: "POST",
-        body: JSON.stringify({ email: email1 }),
+        body: JSON.stringify({ email: email1, tier: UserTier.Enterprise }),
         headers: { "Content-Type": "application/json" },
       },
       mockEnv,
@@ -264,5 +264,28 @@ describe("url routes", () => {
     expect(res.status).toBe(201);
     const { urls }: { urls: UrlObj[] } = await res.json();
     expect(urls.length).toBe(2);
+  });
+
+  it("ensure user can't back shorten URLs with hobby tier", async () => {
+    const testUrl1 = `https://example.com?hobby=${Date.now()}`;
+    const testUrl2 = `https://example.com?hobby=${Date.now()}`;
+
+    // shorten the URL
+    const res = await app.request(
+      "/urls/shorten/batch",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          urls: [{ url: testUrl1 }, { url: testUrl2 }],
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": user2.api_key,
+        },
+      },
+      mockEnv,
+    );
+
+    expect(res.status).toBe(403);
   });
 });

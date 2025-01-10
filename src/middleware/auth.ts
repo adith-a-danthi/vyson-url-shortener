@@ -33,3 +33,14 @@ export const validateApiKey = createMiddleware<{
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });
+
+export const requireEnterpriseTier = createMiddleware<{
+  Bindings: Env;
+  Variables: { user: SelectUser };
+}>(async (c, next) => {
+  if (c.var.user.tier !== "enterprise") {
+    return c.json({ error: "Operation not allowed" }, 403);
+  }
+
+  return next();
+});
