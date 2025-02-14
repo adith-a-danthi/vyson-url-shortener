@@ -57,6 +57,13 @@
       "when": 1736518781119,
       "tag": "0007_natural_ultimates",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1739551494596,
+      "tag": "0008_solid_rafael_vega",
+      "breakpoints": true
     }
   ]
 }

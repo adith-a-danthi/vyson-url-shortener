@@ -1,3 +1,4 @@
+import { REQUEST_LOGS_NA_DEFUALT } from "@/constants";
 import { sql } from "drizzle-orm";
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
@@ -42,3 +43,14 @@ export type InsertUrl = typeof urlsTable.$inferInsert;
 export type SelectUrl = Omit<typeof urlsTable.$inferSelect, "expiresAt"> & {
   expiresAt: string | null;
 };
+
+export const requestLogsTable = sqliteTable("request_logs", {
+  id: int("id").primaryKey({ autoIncrement: true }),
+  method: text("http_method").default(REQUEST_LOGS_NA_DEFUALT).notNull(),
+  url: text("url").default(REQUEST_LOGS_NA_DEFUALT).notNull(),
+  userAgent: text("user_agent").default(REQUEST_LOGS_NA_DEFUALT).notNull(),
+  ip: text("ip").default(REQUEST_LOGS_NA_DEFUALT).notNull(),
+  timestamp: text("timestamp").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});
+
+export type SelectRequestLog = typeof requestLogsTable.$inferSelect
