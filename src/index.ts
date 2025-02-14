@@ -5,9 +5,11 @@ import { sql } from "drizzle-orm";
 import { connectDb, type Env } from "@db/index";
 import urls from "@routes/urls";
 import users from "@routes/users";
+import { requestLogger } from "@middleware/logger";
 
 const app = new Hono<{ Bindings: Env }>();
 app.use(cors());
+app.use(requestLogger);
 
 app.get("/", (c) => c.text("Eh, What's up doc?"));
 
