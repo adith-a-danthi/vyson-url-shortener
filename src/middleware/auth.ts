@@ -1,11 +1,12 @@
 import { createMiddleware } from "hono/factory";
 import { eq } from "drizzle-orm";
 
-import { connectDb, type Env } from "@db/index";
+import { connectDb } from "@db/index";
 import { type SelectUser, usersTable } from "@db/schema";
+import type { Blacklist, ApplicationBindings } from "@/types";
 
 export const validateApiKey = createMiddleware<{
-  Bindings: Env;
+  Bindings: ApplicationBindings;
   Variables: { user: SelectUser };
 }>(async (c, next) => {
   const apiKey = c.req.header("x-api-key");
@@ -35,7 +36,7 @@ export const validateApiKey = createMiddleware<{
 });
 
 export const requireEnterpriseTier = createMiddleware<{
-  Bindings: Env;
+  Bindings: ApplicationBindings;
   Variables: { user: SelectUser };
 }>(async (c, next) => {
   if (c.var.user.tier !== "enterprise") {
@@ -43,4 +44,22 @@ export const requireEnterpriseTier = createMiddleware<{
   }
 
   return next();
+});
+
+export const blacklistCheck = createMiddleware<{
+  Bindings: ApplicationBindings;
+  Variables: { user: SelectUser };
+}>(async (c, next) => {
+  try {
+    const blacklist = await c.env.BLACKLIST.get<Blacklist>("blacklist", "json");
+
+    if (blacklist?.blacklistedKeys.includes(c.var?.user?.apiKey)) {
+      return c.json({ error: "Operation not allowed" }, 403);
+    }
+
+    return next();
+  } catch (error) {
+    console.log(error);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
 });

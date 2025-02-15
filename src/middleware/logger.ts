@@ -1,35 +1,37 @@
-import { connectDb, type Env } from "@db/index";
-import { requestLogsTable } from "@db/schema";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { createMiddleware } from "hono/factory";
 
-export const requestLogger = createMiddleware<{ Bindings: Env }>(
-  async (c, next) => {
-    const { method, url } = c.req;
-    const userAgent = c.req.header("User-Agent") ?? "N/A";
+import { connectDb } from "@db/index";
+import { requestLogsTable } from "@db/schema";
+import type { ApplicationBindings } from "@/types";
 
-    const connInfo = getConnInfo(c);
-    const ip = connInfo.remote.address ?? "N/A";
+export const requestLogger = createMiddleware<{
+  Bindings: ApplicationBindings;
+}>(async (c, next) => {
+  const { method, url } = c.req;
+  const userAgent = c.req.header("User-Agent") ?? "N/A";
 
-    const timestamp = new Date().toISOString();
+  const connInfo = getConnInfo(c);
+  const ip = connInfo.remote.address ?? "N/A";
 
-    console.log(
-      `[${timestamp}] ${method} ${url} - User-Agent: ${userAgent} - IP: ${ip}`,
-    );
+  const timestamp = new Date().toISOString();
 
-    next();
+  console.log(
+    `[${timestamp}] ${method} ${url} - User-Agent: ${userAgent} - IP: ${ip}`,
+  );
 
-    const db = await connectDb(c.env);
-    try {
-      await db.insert(requestLogsTable).values({
-        method,
-        url,
-        userAgent,
-        ip,
-        timestamp,
-      });
-    } catch (error) {
-      console.log(error, "Failed to store request info");
-    }
-  },
-);
+  next();
+
+  const db = await connectDb(c.env);
+  try {
+    await db.insert(requestLogsTable).values({
+      method,
+      url,
+      userAgent,
+      ip,
+      timestamp,
+    });
+  } catch (error) {
+    console.log(error, "Failed to store request info");
+  }
+});

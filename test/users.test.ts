@@ -2,11 +2,11 @@ import { describe, it, expect } from "vitest";
 import { config } from "dotenv";
 
 import app from "@/index";
-import type { Env } from "@/db";
+import type { TursoDbEnv } from "@/db";
 
 config({ path: ".dev.vars" });
 
-const mockEnv: Env = {
+const mockEnv: TursoDbEnv = {
   // biome-ignore lint/style/noNonNullAssertion:
   TURSO_DB_URL: process.env.TURSO_DB_URL!,
   TURSO_DB_AUTH_TOKEN: process.env.TURSO_DB_AUTH_TOKEN,

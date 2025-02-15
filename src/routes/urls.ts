@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { and, eq } from "drizzle-orm";
 
-import { connectDb, type Env } from "@db/index";
+import { connectDb } from "@db/index";
 import { urlsTable } from "@db/schema";
 import { zv } from "@middleware/zod-validator";
 import { requireEnterpriseTier, validateApiKey } from "@middleware/auth";
@@ -19,8 +19,9 @@ import {
   validatePassword,
   hashPassword,
 } from "@/utils";
+import type { ApplicationBindings } from "@/types";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: ApplicationBindings }>();
 
 app.get("/", validateApiKey, async (c) => {
   const db = await connectDb(c.env);

@@ -1,12 +1,13 @@
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
-import { connectDb, type Env } from "@db/index";
+import { connectDb } from "@db/index";
 import { zv } from "@middleware/zod-validator";
 import { createUserSchema, getUsersSchema } from "@validations/users";
 import { usersTable } from "@db/schema";
 import { LibsqlError } from "@libsql/client";
+import type { ApplicationBindings } from "@/types";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: ApplicationBindings }>();
 
 app.post("/", zv("json", createUserSchema), async (c) => {
   const db = await connectDb(c.env);

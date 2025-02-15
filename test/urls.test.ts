@@ -1,14 +1,14 @@
 import { describe, beforeAll, expect, it } from "vitest";
 import { config } from "dotenv";
 
-import type { Env } from "@db/index";
+import type { TursoDbEnv } from "@db/index";
 import { UserTier, type SelectUrl, type SelectUser } from "@db/schema";
 import { getSqid, type ObjectKeysToSnakeCase } from "@/utils";
 import app from "@/index";
 
 config({ path: ".dev.vars" });
 
-const mockEnv: Env = {
+const mockEnv: TursoDbEnv = {
   // biome-ignore lint/style/noNonNullAssertion:
   TURSO_DB_URL: process.env.TURSO_DB_URL!,
   TURSO_DB_AUTH_TOKEN: process.env.TURSO_DB_AUTH_TOKEN,

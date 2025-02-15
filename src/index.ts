@@ -2,14 +2,29 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { sql } from "drizzle-orm";
 
-import { connectDb, type Env } from "@db/index";
+import { connectDb } from "@db/index";
 import urls from "@routes/urls";
 import users from "@routes/users";
 import { requestLogger } from "@middleware/logger";
+import { blacklistCheck } from "@middleware/auth";
+import type { ApplicationBindings } from "./types";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{
+  Bindings: ApplicationBindings;
+}>();
 app.use(cors());
 app.use(requestLogger);
+
+app.get("/test", blacklistCheck, async (c) => {
+  try {
+    const keyList = await c.env.BLACKLIST.list();
+
+    return c.json({ message: "Server Health", data: keyList }, 200);
+  } catch (error) {
+    console.log(error);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
 
 app.get("/", (c) => c.text("Eh, What's up doc?"));
 
