@@ -6,13 +6,15 @@ import { connectDb } from "@db/index";
 import urls from "@routes/urls";
 import users from "@routes/users";
 import { requestLogger } from "@middleware/logger";
+import { timing, type TimingVariables } from "hono/timing";
 import { blacklistCheck } from "@middleware/auth";
 import type { ApplicationBindings } from "./types";
 
 const app = new Hono<{
-  Bindings: ApplicationBindings;
+  Bindings: ApplicationBindings & TimingVariables;
 }>();
 app.use(cors());
+app.use(timing());
 app.use(requestLogger);
 
 app.get("/test", blacklistCheck, async (c) => {
