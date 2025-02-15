@@ -20,7 +20,7 @@ export const requestLogger = createMiddleware<{
     `[${timestamp}] ${method} ${url} - User-Agent: ${userAgent} - IP: ${ip}`,
   );
 
-  next();
+  await next();
 
   const db = await connectDb(c.env);
   try {
