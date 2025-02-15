@@ -4,7 +4,11 @@ import { and, eq } from "drizzle-orm";
 import { connectDb } from "@db/index";
 import { urlsTable } from "@db/schema";
 import { zv } from "@middleware/zod-validator";
-import { requireEnterpriseTier, validateApiKey } from "@middleware/auth";
+import {
+  blacklistCheck,
+  requireEnterpriseTier,
+  validateApiKey,
+} from "@middleware/auth";
 import {
   createUrlSchema,
   redirectUrlSchema,
@@ -23,7 +27,7 @@ import type { ApplicationBindings } from "@/types";
 
 const app = new Hono<{ Bindings: ApplicationBindings }>();
 
-app.get("/", validateApiKey, async (c) => {
+app.get("/", validateApiKey, blacklistCheck, async (c) => {
   const db = await connectDb(c.env);
   try {
     const urls = await db
@@ -39,45 +43,52 @@ app.get("/", validateApiKey, async (c) => {
   }
 });
 
-app.post("/shorten", validateApiKey, zv("json", createUrlSchema), async (c) => {
-  const db = await connectDb(c.env);
-  try {
-    const {
-      url,
-      shortCode: customShortCode,
-      expiresAt,
-      password,
-    } = c.req.valid("json");
-
-    const shortCode = customShortCode ?? getSqid();
-    const passwordHash = password ? await hashPassword(password) : null;
-
-    const res = await db
-      .insert(urlsTable)
-      .values({
+app.post(
+  "/shorten",
+  validateApiKey,
+  blacklistCheck,
+  zv("json", createUrlSchema),
+  async (c) => {
+    const db = await connectDb(c.env);
+    try {
+      const {
         url,
-        shortCode,
-        userId: c.var.user.id,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-        password: passwordHash,
-      })
-      .returning({
-        id: urlsTable.id,
-        url: urlsTable.url,
-        short_code: urlsTable.shortCode,
-        expires_at: urlsTable.expiresAt,
-      });
+        shortCode: customShortCode,
+        expiresAt,
+        password,
+      } = c.req.valid("json");
 
-    return c.json({ ...res[0] }, 201);
-  } catch (error) {
-    console.log(error);
-    return c.json({ error: "Internal Server Error" }, 500);
-  }
-});
+      const shortCode = customShortCode ?? getSqid();
+      const passwordHash = password ? await hashPassword(password) : null;
+
+      const res = await db
+        .insert(urlsTable)
+        .values({
+          url,
+          shortCode,
+          userId: c.var.user.id,
+          expiresAt: expiresAt ? new Date(expiresAt) : null,
+          password: passwordHash,
+        })
+        .returning({
+          id: urlsTable.id,
+          url: urlsTable.url,
+          short_code: urlsTable.shortCode,
+          expires_at: urlsTable.expiresAt,
+        });
+
+      return c.json({ ...res[0] }, 201);
+    } catch (error) {
+      console.log(error);
+      return c.json({ error: "Internal Server Error" }, 500);
+    }
+  },
+);
 
 app.post(
   "/shorten/batch",
   validateApiKey,
+  blacklistCheck,
   requireEnterpriseTier,
   zv("json", createUrlBatchSchema),
   async (c) => {
@@ -160,6 +171,7 @@ app.get("/redirect", zv("query", redirectUrlSchema), async (c) => {
 app.delete(
   "/shortcode/:code",
   validateApiKey,
+  blacklistCheck,
   zv("param", deleteUrlSchema),
   async (c) => {
     const user = c.var.user;
@@ -200,6 +212,7 @@ app.delete(
 app.patch(
   "/:id",
   validateApiKey,
+  blacklistCheck,
   zv("param", updateUrlParamsSchema),
   zv("json", updateUrlSchema),
   async (c) => {
