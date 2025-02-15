@@ -7,7 +7,6 @@ import urls from "@routes/urls";
 import users from "@routes/users";
 import { requestLogger } from "@middleware/logger";
 import { timing, type TimingVariables } from "hono/timing";
-import { blacklistCheck } from "@middleware/auth";
 import type { ApplicationBindings } from "./types";
 
 const app = new Hono<{
@@ -16,17 +15,6 @@ const app = new Hono<{
 app.use(cors());
 app.use(timing());
 app.use(requestLogger);
-
-app.get("/test", blacklistCheck, async (c) => {
-  try {
-    const keyList = await c.env.BLACKLIST.list();
-
-    return c.json({ message: "Server Health", data: keyList }, 200);
-  } catch (error) {
-    console.log(error);
-    return c.json({ error: "Internal Server Error" }, 500);
-  }
-});
 
 app.get("/", (c) => c.text("Eh, What's up doc?"));
 
